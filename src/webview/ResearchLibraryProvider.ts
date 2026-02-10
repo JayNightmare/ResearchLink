@@ -4,7 +4,7 @@ import { SemanticScholarClient } from "../lib/api/semanticscholar";
 import { LibraryStore } from "../lib/storage/library";
 
 export class ResearchLibraryProvider implements vscode.WebviewViewProvider {
-	public static readonly viewType = "research-gate.researchLibrary";
+	public static readonly viewType = "research-link.researchLibrary";
 
 	private _view?: vscode.WebviewView;
 
@@ -132,7 +132,7 @@ export class ResearchLibraryProvider implements vscode.WebviewViewProvider {
 				}
 				case "openPaper": {
 					vscode.commands.executeCommand(
-						"research-gate.openPaper",
+						"research-link.openPaper",
 						data.paper,
 					);
 					break;

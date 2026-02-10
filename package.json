@@ -1,6 +1,6 @@
 {
-	"name": "research-gate",
-	"displayName": "Research Gate",
+	"name": "research-link",
+	"displayName": "Research Link",
 	"description": "Cite research straight from your IDE",
 	"version": "0.0.1",
 	"engines": {
@@ -14,24 +14,24 @@
 	"contributes": {
 		"commands": [
 			{
-				"command": "research-gate.helloWorld",
+				"command": "research-link.helloWorld",
 				"title": "Hello World"
 			}
 		],
 		"viewsContainers": {
 			"activitybar": [
 				{
-					"id": "research-gate-sidebar",
+					"id": "research-link-sidebar",
 					"title": "Research Link",
 					"icon": "media/icon.svg"
 				}
 			]
 		},
 		"views": {
-			"research-gate-sidebar": [
+			"research-link-sidebar": [
 				{
 					"type": "webview",
-					"id": "research-gate.researchLibrary",
+					"id": "research-link.researchLibrary",
 					"name": "Research Library"
 				}
 			]

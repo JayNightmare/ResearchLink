@@ -1,8 +1,8 @@
-# ResearchLink Extension - Development Memory
+# Research Link - Development Memory
 
 ## Project Overview
 
-ResearchLink is a VS Code extension that integrates academic research into the developer's workflow. It enables searching, previewing, and managing academic papers directly within the IDE, leveraging CrossRef and Semantic Scholar APIs.
+**Research Link** is a VS Code extension that integrates academic research into the developer's workflow. It enables searching, previewing, and managing academic papers directly within the IDE, leveraging CrossRef and Semantic Scholar APIs.
 
 ## Architecture
 
@@ -16,7 +16,7 @@ ResearchLink is a VS Code extension that integrates academic research into the d
      - Uses `media/main.css` as the source of truth.
      - Includes `@import "tailwindcss";` for utility classes.
      - Integrated with VS Code theme variables (`var(--vscode-...)`) for native look and feel.
-     - Use `postcss` plugin in `esbuild` to process styles.
+     - **Semantic Colors**: Mapped to VS Code tokens (e.g., `textBlockQuote-background` for muted backgrounds) to ensure high contrast in all themes.
 
 ### Component Structure
 
@@ -26,7 +26,7 @@ ResearchLink is a VS Code extension that integrates academic research into the d
       - Helper: `LibraryStore.ts` (Handles JSON persistence).
 2. **Editor Panel (Paper Details)**:
       - Entry: `src/webview/panel.tsx`
-      - Command: `research-gate.openPaper`
+      - Command: `research-link.openPaper`
       - Features: Abstract view, citation generation, AI reference creation (markdown export).
 
 ### Key Workflows
@@ -48,32 +48,35 @@ ResearchLink is a VS Code extension that integrates academic research into the d
 - [x] **Paper Details View**:
      - Dedicated editor tab for reading.
      - Abstract and metadata display.
-     - Citation generator (APA, MLA, Harvard).
+     - Citation generator (APA, MLA, Harvard, Chicago).
      - **AI Reference**: Exports structured markdown to `docs/` for RAG/LLM usage.
 - [x] **Styling System**:
      - Integrated Tailwind CSS v4.
-     - Solved build issues by using `@tailwindcss/postcss` plugin.
-     - Configured correct CSS injection into Webviews (`<link href="...">`).
+     - Configured correct CSS injection into Webviews.
+     - **High Contrast**: Implemented semantic color mappings for badges and text.
+- [x] **Metadata**:
+     - Added Publication Type and Open Access status.
+     - In-text citation generation.
 - [x] **Refactoring**:
-     - Cleaned up `esbuild.js` to handle multiple entry points and CSS efficiently.
-     - Centralized CSS in `media/main.css`.
+     - Renamed project to "Research Link".
+     - Unified card styling across Search and Library views.
 
 ### Usage Instructions
 
 1. **Build**: Run `npm run compile`.
 2. **Debug**: Press `F5` to launch Extension Host.
-3. **Search**: Open "ResearchLink" sidebar, type query (e.g., "Transformers").
+3. **Search**: Open "Research Link" sidebar, type query (e.g., "Transformers").
 4. **Save**: Click "Save to Library".
 5. **Read**: Go to "Library" tab, click "Read" on a paper.
 6. **AI Export**: In the reading view, click "Generate AI Reference" to create a local markdown file.
 
 ## Known Issues (Resolved)
 
-- **CSS Injection**: Initially, styles were not applying because the `<link>` tag was missing in the HTML template. Fixed by properly resolving `styleUri` in `extension.ts` and `ResearchLibraryProvider.ts`.
-- **Tailwind v4 Build**: `esbuild-style-plugin` had issues without the dedicated `@tailwindcss/postcss` package. Fixed by installing the package and updating `esbuild.js` plugins.
+- **Contrast**: Text was hard to read in some themes. Fixed by mapping CSS variables to specific VS Code theme tokens (`descriptionForeground`, etc.).
+- **Missing Metadata**: Abstract/Type was missing. Fixed by updating `SemanticScholarClient`.
 
 ## Next Steps
 
-- **Metadata Extraction**: Integrate the `MetadataExtractor` module (currently scaffolding) to clean/enrich data before saving.
-- **PDF Viewing**: Investigate embedding a PDF viewer (e.g., PDF.js) for papers with open-access URLs.
-- **Graph View**: Visualize connections between saved papers (citations/references).
+- **Metadata Extraction**: Clean/enrich data before saving.
+- **PDF Viewing**: Investigate embedding a PDF viewer (e.g., PDF.js).
+- **Graph View**: Visualize connections between saved papers.

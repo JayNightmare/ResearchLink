@@ -1,71 +1,63 @@
-# research-gate README
+# Research Link
 
-This is the README for your extension "research-gate". After writing up a brief description, we recommend including the following sections.
+**Research Link** brings academic research directly into your VS Code workflow. Search, preview, manage, and cite papers from CrossRef and Semantic Scholar without leaving your editor.
+
+![Research Link Screenshot](media/screenshot.png)
 
 ## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+- **Integrated Search**: Query millions of academic papers via CrossRef and Semantic Scholar.
+- **Personal Library**: Save papers to a local JSON-based library for quick access.
+- **Reader View**: Read abstracts and metadata in a dedicated, distraction-free panel.
+- **Citation Generator**: Copy citations in APA, MLA, Harvard, or Chicago formats.
+- **AI-Ready Workflow**: Export structured markdown files (`docs/*.md`) containing paper metadata and abstracts, optimized for RAG (Retrieval-Augmented Generation) and LLM context.
+- **Visual Indicators**: Badges for Open Access status and Publication Type (Journal, Conference, Pre-print).
 
-For example if there is an image subfolder under your extension project workspace:
+## Usage
 
-\!\[feature X\]\(images/feature-x.png\)
+1. **Open Sidebar**: Click the **Research Link** icon in the Activity Bar.
+2. **Search**: Enter a query (e.g., "Transformers", "DOI:10.1038/s41586-020-2649-2") in the search bar.
+3. **Save**: Click "Save to Library" on any result to add it to your personal collection.
+4. **Read & Cite**:
+      - Click "Read" on a saved paper to open the details panel.
+      - Use the **Reference** tab to generate and copy citations.
+      - Click **Generate AI Reference** to create a markdown file for your AI contexts.
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+## Configuration
 
-## Requirements
+Research Link works out of the box. No API keys are required for basic usage.
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+## AI Integration
+
+Research Link is designed to work alongside AI coding assistants. By generating structured markdown files of your research, you can easily provide context to your LLM:
+
+1. Open a paper in Research Link.
+2. Click **Generate AI Reference**.
+3. A file is created in `docs/<DOI_or_ID>.md`.
+4. Reference this file in your AI chat (e.g., `@docs/10.1038_s41586-020-2649-2.md`) to ask questions about the paper.
 
 ## Extension Settings
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
-
-For example:
-
 This extension contributes the following settings:
 
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+- `research-link.libraryPath`: (Optional) Custom path for the library JSON file.
 
 ## Known Issues
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+- PDF viewing is currently handled via external browser links.
+- Rate limits apply to Semantic Scholar API requests.
 
 ## Release Notes
 
-Users appreciate release notes as you update your extension.
+### 0.0.1
 
-### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
+- Initial release.
+- Search CrossRef & Semantic Scholar.
+- Local Library management.
+- Markdown export for AI context.
+- Dark/Light mode support.
 
 ---
 
-## Following extension guidelines
-
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
-
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+**Enjoying Research Link?**  
+Please leave a review on the Marketplace!
