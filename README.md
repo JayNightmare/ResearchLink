@@ -6,9 +6,11 @@
 
 ## Features
 
-- **Integrated Search**: Query millions of academic papers via CrossRef and Semantic Scholar.
+- **Integrated Search**: Query millions of academic papers via CrossRef and Semantic Scholar, with smart deduplication to merge the best metadata from both sources.
 - **Personal Library**: Save papers to a local JSON-based library for quick access.
 - **Reader View**: Read abstracts and metadata in a dedicated, distraction-free panel.
+- **PDF Viewer**: View open-access PDFs directly in VS Code with page navigation and zoom controls.
+- **Research Graph**: Visualise connections between saved papers with an interactive force-directed graph (edges from citations and shared authors).
 - **Citation Generator**: Copy citations in APA, MLA, Harvard, or Chicago formats.
 - **AI-Ready Workflow**: Export structured markdown files (`docs/*.md`) containing paper metadata and abstracts, optimized for RAG (Retrieval-Augmented Generation) and LLM context.
 - **Visual Indicators**: Badges for Open Access status and Publication Type (Journal, Conference, Pre-print).
@@ -22,6 +24,8 @@
       - Click "Read" on a saved paper to open the details panel.
       - Use the **Reference** tab to generate and copy citations.
       - Click **Generate AI Reference** to create a markdown file for your AI contexts.
+5. **View PDFs**: Click **Read PDF 📄** on an open-access paper to view the PDF in-editor.
+6. **Research Graph**: Click the **🕸️** button in the sidebar to visualise connections between your saved papers.
 
 ## Configuration
 
@@ -44,10 +48,23 @@ This extension contributes the following settings:
 
 ## Known Issues
 
-- PDF viewing is currently handled via external browser links.
+- Some PDFs may be behind paywalls or require authentication. Research Link will show a clear error in these cases.
 - Rate limits apply to Semantic Scholar API requests.
+- Some papers may not have abstracts available in either CrossRef or Semantic Scholar.
 
 ## Release Notes
+
+### 0.0.3
+
+- Fixed PDF viewer: extension-host-side fetching, bundled pdfjs worker, ArXiv URL rewrites, paywall detection.
+- Fixed Graph View: fresh library reads, immediate shared-author edges.
+- Smart search deduplication: merges S2 + CrossRef results, fills missing abstracts.
+
+### 0.0.2
+
+- Metadata Extraction with strategy pattern.
+- Embedded PDF viewer with pdfjs-dist.
+- Force-directed graph visualisation.
 
 ### 0.0.1
 

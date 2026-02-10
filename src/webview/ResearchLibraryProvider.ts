@@ -1,7 +1,9 @@
 import * as vscode from "vscode";
+import { Paper } from "../types";
 import { CrossRefClient } from "../lib/api/crossref";
 import { SemanticScholarClient } from "../lib/api/semanticscholar";
 import { LibraryStore } from "../lib/storage/library";
+import { createExtractor, MetadataExtractor } from "../features/extraction";
 
 export class ResearchLibraryProvider implements vscode.WebviewViewProvider {
 	public static readonly viewType = "research-link.researchLibrary";
@@ -11,6 +13,7 @@ export class ResearchLibraryProvider implements vscode.WebviewViewProvider {
 	private _crossRefClient = new CrossRefClient();
 	private _semanticScholarClient = new SemanticScholarClient();
 	private _libraryStore: LibraryStore;
+	private _extractor: MetadataExtractor = createExtractor();
 
 	constructor(private readonly _context: vscode.ExtensionContext) {
 		// Initialize LibraryStore with globalStoragePath
@@ -80,11 +83,80 @@ export class ResearchLibraryProvider implements vscode.WebviewViewProvider {
 										],
 									);
 
+								const merged =
+									new Map<
+										string,
+										Paper
+									>();
+
+								// Add S2 results first (better citation data + open access)
+								for (const p of semanticScholarResults.papers) {
+									const key =
+										p.doi?.toLowerCase() ||
+										p.title
+											.toLowerCase()
+											.trim();
+									merged.set(
+										key,
+										p,
+									);
+								}
+
+								// Merge CrossRef — fill in missing fields
+								for (const p of crossRefResults.papers) {
+									const key =
+										p.doi?.toLowerCase() ||
+										p.title
+											.toLowerCase()
+											.trim();
+									const existing =
+										merged.get(
+											key,
+										);
+									if (
+										existing
+									) {
+										if (
+											!existing.abstract &&
+											p.abstract
+										) {
+											existing.abstract =
+												p.abstract;
+										}
+										if (
+											!existing.doi &&
+											p.doi
+										) {
+											existing.doi =
+												p.doi;
+										}
+										if (
+											!existing.pdfUrl &&
+											p.pdfUrl
+										) {
+											existing.pdfUrl =
+												p.pdfUrl;
+											existing.isOpenAccess = true;
+										}
+										if (
+											!existing.venue &&
+											p.venue
+										) {
+											existing.venue =
+												p.venue;
+										}
+									} else {
+										merged.set(
+											key,
+											p,
+										);
+									}
+								}
+
 								const combinedPapers =
-									[
-										...semanticScholarResults.papers,
-										...crossRefResults.papers,
-									];
+									Array.from(
+										merged.values(),
+									);
 
 								// Send results back to webview
 								webviewView.webview.postMessage(
@@ -103,7 +175,11 @@ export class ResearchLibraryProvider implements vscode.WebviewViewProvider {
 					break;
 				}
 				case "savePaper": {
-					this._libraryStore.addPaper(data.paper);
+					const enriched =
+						await this._extractor.enrich(
+							data.paper,
+						);
+					this._libraryStore.addPaper(enriched);
 					vscode.window.showInformationMessage(
 						`Saved paper: ${data.title}`,
 					);
@@ -134,6 +210,12 @@ export class ResearchLibraryProvider implements vscode.WebviewViewProvider {
 					vscode.commands.executeCommand(
 						"research-link.openPaper",
 						data.paper,
+					);
+					break;
+				}
+				case "openGraph": {
+					vscode.commands.executeCommand(
+						"research-link.openGraph",
 					);
 					break;
 				}

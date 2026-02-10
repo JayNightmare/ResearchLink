@@ -15,6 +15,7 @@ interface S2Paper {
 	url: string;
 	publicationTypes?: string[];
 	openAccessPdf?: { url: string; status: string } | null;
+	externalIds?: { DOI?: string; ArXiv?: string } | null;
 }
 
 interface S2Response {
@@ -32,7 +33,7 @@ export class SemanticScholarClient {
 		url.searchParams.append("limit", limit.toString());
 		url.searchParams.append(
 			"fields",
-			"paperId,title,authors,abstract,citationCount,venue,year,url,publicationTypes,openAccessPdf",
+			"paperId,title,authors,abstract,citationCount,venue,year,url,publicationTypes,openAccessPdf,externalIds",
 		);
 
 		try {
@@ -82,7 +83,8 @@ export class SemanticScholarClient {
 			authors: paper.authors
 				? paper.authors.map((a) => a.name)
 				: [],
-			abstract: paper.abstract,
+			abstract: paper.abstract || undefined,
+			doi: paper.externalIds?.DOI || undefined,
 			citations: paper.citationCount || 0,
 			year: paper.year,
 			venue: paper.venue,
@@ -91,7 +93,39 @@ export class SemanticScholarClient {
 				? paper.publicationTypes[0]
 				: undefined,
 			isOpenAccess: !!paper.openAccessPdf,
-			// DOI isn't always returned directly unless requested separately/parsed, but S2ID is consistent
+			pdfUrl: paper.openAccessPdf?.url,
 		};
+	}
+
+	async getReferences(paperId: string): Promise<string[]> {
+		const url = `https://api.semanticscholar.org/graph/v1/paper/${encodeURIComponent(paperId)}/references?fields=paperId&limit=100`;
+
+		try {
+			const response = await fetch(url, {
+				headers: {
+					"User-Agent":
+						"ResearchLink-VSCode-Extension/0.1",
+				},
+			});
+
+			if (!response.ok) {
+				return [];
+			}
+
+			const data = (await response.json()) as {
+				data: {
+					citedPaper: { paperId: string | null };
+				}[];
+			};
+
+			return (data.data || [])
+				.map((r) => r.citedPaper?.paperId)
+				.filter(
+					(id): id is string =>
+						id !== null && id !== undefined,
+				);
+		} catch {
+			return [];
+		}
 	}
 }

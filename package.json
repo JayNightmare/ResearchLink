@@ -2,7 +2,7 @@
 	"name": "research-link",
 	"displayName": "Research Link",
 	"description": "Cite research straight from your IDE",
-	"version": "0.0.1",
+	"version": "0.0.3",
 	"engines": {
 		"vscode": "^1.104.0"
 	},
@@ -59,6 +59,7 @@
 		"esbuild": "^0.27.3",
 		"esbuild-style-plugin": "^1.6.3",
 		"eslint": "^9.39.2",
+		"pdfjs-dist": "^4.9.155",
 		"postcss": "^8.5.6",
 		"react": "^18.3.1",
 		"react-dom": "^18.3.1",

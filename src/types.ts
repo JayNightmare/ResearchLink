@@ -13,6 +13,9 @@ export interface Paper {
 	tags?: string[];
 	publicationType?: string;
 	isOpenAccess?: boolean;
+	pdfUrl?: string;
+	references?: string[]; // Semantic Scholar paper IDs for graph edges
+	enrichedAt?: number;
 }
 
 export interface SearchResult {

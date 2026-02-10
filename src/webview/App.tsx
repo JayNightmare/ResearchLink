@@ -42,6 +42,21 @@ const App: React.FC = () => {
 					>
 						Search
 					</button>
+					<button
+						onClick={() => {
+							if (vscode) {
+								vscode.postMessage(
+									{
+										type: "openGraph",
+									},
+								);
+							}
+						}}
+						className="cursor-pointer px-3 py-1.5 text-sm font-medium rounded-sm transition-all text-muted-foreground hover:text-foreground hover:bg-background/50"
+						title="Open Graph View"
+					>
+						🕸️
+					</button>
 				</nav>
 			</header>
 

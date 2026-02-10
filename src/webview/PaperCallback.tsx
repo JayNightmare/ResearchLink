@@ -42,6 +42,16 @@ const PaperCallback: React.FC = () => {
 		}
 	};
 
+	const handleOpenPdf = () => {
+		if (vscode && paper && paper.pdfUrl) {
+			vscode.postMessage({
+				type: "openPdf",
+				url: paper.pdfUrl,
+				title: paper.title,
+			});
+		}
+	};
+
 	if (!paper)
 		return (
 			<div className="p-4 text-center text-muted-foreground animate-pulse">
@@ -123,7 +133,7 @@ const PaperCallback: React.FC = () => {
 						onClick={() =>
 							setTab("overview")
 						}
-						className={`px-4 py-2 rounded-md text-sm font-medium transition-colors focus:ring-2 focus:ring-ring ${
+						className={`cursor-pointer px-4 py-2 rounded-md text-sm font-medium transition-colors focus:ring-2 focus:ring-ring ${
 							tab === "overview"
 								? "bg-primary text-primary-foreground shadow-sm"
 								: "hover:bg-muted text-muted-foreground hover:text-foreground"
@@ -135,7 +145,7 @@ const PaperCallback: React.FC = () => {
 						onClick={() =>
 							setTab("reference")
 						}
-						className={`px-4 py-2 rounded-md text-sm font-medium transition-colors focus:ring-2 focus:ring-ring ${
+						className={`cursor-pointer px-4 py-2 rounded-md text-sm font-medium transition-colors focus:ring-2 focus:ring-ring ${
 							tab === "reference"
 								? "bg-primary text-primary-foreground shadow-sm"
 								: "hover:bg-muted text-muted-foreground hover:text-foreground"
@@ -152,6 +162,15 @@ const PaperCallback: React.FC = () => {
 						>
 							View Source ↗
 						</a>
+					)}
+					{paper.pdfUrl && (
+						<button
+							onClick={handleOpenPdf}
+							className="cursor-pointer px-4 py-2 rounded-md text-sm font-medium bg-red-600 text-white hover:bg-red-700 shadow-sm flex items-center transition-colors"
+							title="Open PDF"
+						>
+							Read PDF 📄
+						</button>
 					)}
 				</div>
 			</div>
@@ -244,7 +263,7 @@ const PaperCallback: React.FC = () => {
 												"full",
 											)
 										}
-										className={`px-3 py-2 text-sm ${
+										className={`cursor-pointer px-3 py-2 text-sm ${
 											citationType ===
 											"full"
 												? "bg-accent text-accent-foreground font-medium"
@@ -261,7 +280,7 @@ const PaperCallback: React.FC = () => {
 												"in-text",
 											)
 										}
-										className={`px-3 py-2 text-sm ${
+										className={`cursor-pointer px-3 py-2 text-sm ${
 											citationType ===
 											"in-text"
 												? "bg-accent text-accent-foreground font-medium"
@@ -285,7 +304,7 @@ const PaperCallback: React.FC = () => {
 							</div>
 							<div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
 								<button
-									className="text-xs bg-background border shadow-sm px-2 py-1 rounded"
+									className="cursor-pointer text-xs bg-background border shadow-sm px-2 py-1 rounded"
 									onClick={() => {
 										navigator.clipboard.writeText(
 											generateReference(
@@ -328,7 +347,7 @@ const PaperCallback: React.FC = () => {
 									onClick={
 										handleGenerateAIReference
 									}
-									className="w-full sm:w-auto px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80 flex items-center justify-center gap-2 font-medium transition-colors"
+									className="cursor-pointer w-full sm:w-auto px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80 flex items-center justify-center gap-2 font-medium transition-colors"
 								>
 									<span>
 										✨
