@@ -60,36 +60,23 @@ Research Link is designed to work alongside AI coding assistants. By generating 
 This extension contributes the following settings:
 
 - `research-link.libraryPath`: (Optional) Custom path for the library JSON file.
+- `research-link.importPdf`: (Optional) Automatically import PDFs when saving papers.
+     - `research-link.importPdfPath`: (Optional) Custom path for the PDF files.
+- `research-link.importUrl`: Automatically import URLs when saving papers.
 
 ## Known Issues
 
 - Some PDFs may be behind paywalls or require authentication. Research Link will show a clear error in these cases.
 - Rate limits apply to Semantic Scholar API requests.
-- Some papers may not have abstracts available in either CrossRef or Semantic Scholar.
+- Some papers may not have abstracts available in either CrossRef, Semantic Scholar, or OpenAlex.
 
 ## Release Notes
 
-### 0.0.3
-
-- Fixed PDF viewer: extension-host-side fetching, bundled pdfjs worker, ArXiv URL rewrites, paywall detection.
-- Fixed Graph View: fresh library reads, immediate shared-author edges.
-- Smart search deduplication: merges S2 + CrossRef results, fills missing abstracts.
-
-### 0.0.2
-
-- Metadata Extraction with strategy pattern.
-- Embedded PDF viewer with pdfjs-dist.
-- Force-directed graph visualisation.
-
-### 0.0.1
-
-- Initial release.
-- Search CrossRef & Semantic Scholar.
-- Local Library management.
-- Markdown export for AI context.
-- Dark/Light mode support.
+- See [CHANGELOG.md](CHANGELOG.md) for release notes.
+- See [Releases](https://github.com/JayNightmare/ResearchLink/releases) for release package.
+- See [Issues](https://github.com/JayNightmare/ResearchLink/issues) for known issues.
 
 ---
 
-**Enjoying Research Link?**  
+**Enjoying Research Link?**
 Please leave a review on the Marketplace!
