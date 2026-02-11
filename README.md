@@ -1,12 +1,27 @@
+<div align="center">
+
+<span>
+
+<img src="./media/favicon.png" alt="Research Link Icon" width="100" height="100">
+
 # Research Link
 
+</span>
+
+![CI](https://github.com/JayNightmare/ResearchLink/actions/workflows/ci.yaml/badge.svg)
+
 **Research Link** brings academic research directly into your VS Code workflow. Search, preview, manage, and cite papers from CrossRef and Semantic Scholar without leaving your editor.
+
+</div>
 
 ![Research Link Screenshot](media/screenshot.png)
 
 ## Features
 
-- **Integrated Search**: Query millions of academic papers via CrossRef and Semantic Scholar, with smart deduplication to merge the best metadata from both sources.
+- **Integrated Search**: Query millions of academic papers via CrossRef, Semantic Scholar, and OpenAlex, with smart deduplication to merge the best metadata from all sources.
+- **Advanced Search**: Filter by Title, Author, Year, Venue, and DOI for precise results.
+- **Enhanced Filtering**: Refine search results by specific year ranges, Open Access status, and publication type.
+- **Selection Import**: Review multiple candidates when importing from ambiguous URLs/titles.
 - **Personal Library**: Save papers to a local JSON-based library for quick access.
 - **Reader View**: Read abstracts and metadata in a dedicated, distraction-free panel.
 - **PDF Viewer**: View open-access PDFs directly in VS Code with page navigation and zoom controls.

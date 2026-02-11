@@ -108,6 +108,8 @@ To maintain project velocity, the AI shifts between the following operational mo
      - Extension host fetches PDF binary, sends base64 to webview (VS Code webviews are sandboxed).
      - Bundled `pdf.worker.min.mjs` via esbuild copy step, injected as `window.__PDFJS_WORKER_SRC__`.
      - Validates `%PDF` magic bytes; auto-rewrites ArXiv `/abs/` → `/pdf/` URLs. Clear paywall error messages.
+     - Text layer overlay using `transform: translate()` positioning for pixel-perfect alignment at all zoom levels.
+     - `inline-block` canvas wrapper + `min-w-0` flex column prevents overlay drift and toolbar overflow at high zoom.
 - [x] **Graph View**:
      - Custom canvas force-directed layout (zero external deps).
      - Nodes = saved papers, edges = citation refs + shared authors.
@@ -125,10 +127,34 @@ To maintain project velocity, the AI shifts between the following operational mo
 - [x] **PDF Annotation**:
      - Text layer overlay on PDF canvas for text selection.
      - Highlight creation with 5 color choices (yellow, green, blue, pink, orange).
-     - Annotation notes sidebar panel with per-page highlight list, inline note editing.
-     - Keyboard shortcut `⌘H` for quick highlighting.
+     - Annotation notes sidebar panel with "This Page / All Pages" toggle.
+     - Click any annotation card to jump to its page; page badge on each card.
+     - Inline note editing, keyboard shortcut `⌘H` for quick highlighting.
      - `PdfAnnotation` type in `types.ts`; `annotations` field on `Paper`.
      - Annotations persisted to `LibraryStore` via `saveAnnotations` message handler.
+- [x] **Import Tool**:
+     - Import from local PDF: file picker → pdfjs text extraction (title via largest font, DOI via regex, authors, abstract).
+     - Import from URL/DOI: input box → Semantic Scholar + CrossRef dual-API lookup.
+     - Editable metadata form (`ImportEditor.tsx`) with all Paper fields, "User Added" badge.
+     - If DOI found in PDF, auto-enriches via S2 API (abstract, venue, citations, PDF URL).
+     - Falls back to empty form with defaults if extraction fails.
+     - `source: "user"` field on `Paper` type for badge display.
+     - Sidebar import buttons (📄 PDF / 🔗 URL) in Library header.
+- [x] **Advanced Search**:
+     - Field-specific query support (Title, Author, Venue, Year, DOI).
+     - UI toggle for detailed inputs vs single search bar.
+- [x] **URL Import Candidates**:
+     - Ambiguity handling: fetches up to 5 candidates for non-DOI inputs.
+     - Selection UI (`ImportEditor.tsx`) allows user to pick the correct paper.
+- [x] **Enhanced Filtering & Sorting**:
+     - Year range filter (From/To).
+     - Open Access toggle.
+     - Dynamic Publication Type dropdown.
+     - Sorting by Relevance, Citations, or Date (Newest/Oldest).
+- [x] **OpenAlex Integration**:
+     - Added `OpenAlexClient` as a third API source.
+     - Integrated into `_mergeResults` pipeline for richer metadata coverage (abstracts, OA links).
+     - Source tracking (`source: "openalex"`) in `Paper` type.
 
 ### Usage Instructions
 
@@ -140,19 +166,27 @@ To maintain project velocity, the AI shifts between the following operational mo
 6. **AI Export**: In the reading view, click "Generate AI Reference" to create a local markdown file.
 7. **View PDF**: Open an Open Access paper detail → click "Read PDF 📄" to view in-editor.
 8. **Graph View**: Click the 🕸️ button in the sidebar to visualise paper connections.
+9. **Annotate PDF**: Select text → press `⌘H` or click ✏️ Highlight → toggle 📝 panel to manage notes.
+10. **Import PDF**: Click 📄 PDF in sidebar header → select file → review metadata → save.
+11. **Import URL**: Click 🔗 URL in sidebar header → enter DOI/URL → review metadata → save.
 
 ## Known Issues (Resolved)
 
-- **Contrast**: Text was hard to read in some themes. Fixed by mapping CSS variables to specific VS Code theme tokens (`descriptionForeground`, etc.).
+- **Contrast**: Text was hard to read in some themes. Fixed by mapping CSS variables to specific VS Code theme tokens.
 - **Missing Metadata**: Abstract/Type was missing. Fixed by updating `SemanticScholarClient`.
 - **PDF "Failed to fetch"**: VS Code webviews are network-sandboxed. Fixed by moving PDF fetch to extension host.
-- **PDF "Invalid PDF structure"**: Some URLs return HTML landing pages, not PDFs. Fixed with `%PDF` magic byte validation.
+- **PDF "Invalid PDF structure"**: Some URLs return HTML landing pages. Fixed with `%PDF` magic byte validation.
 - **PDF worker error**: `workerSrc=""` is falsy in pdfjs v4. Fixed by bundling worker file locally.
 - **Graph View blank**: `LibraryStore` was cached at registration time. Fixed by instantiating fresh on each command.
-- **Missing abstracts**: Many S2 results lacked abstracts that CrossRef had. Fixed by deduplicating search results and merging fields.
+- **Missing abstracts**: S2 results lacked abstracts that CrossRef had. Fixed by deduplicating and merging.
+- **Annotation Y-axis inverted**: `viewport.transform` already flips to screen coords; code was double-inverting. Fixed by using `tx[5]` directly.
+- **Text layer misaligned**: `left`/`top` positioning was fragile. Fixed by using `transform: translate()` for all span placement.
+- **Highlights drift at high zoom**: Canvas overflow caused absolute overlays to misalign. Fixed with `inline-block` wrapper.
+- **Toolbar overflow at high zoom**: Flex column grew with canvas content. Fixed with `min-w-0`.
 
 ## Next Steps
 
-- **BibTeX Export**: One-click export of saved papers to `.bib` format.
-- **Collections/Folders**: Group papers into named collections for project-specific organization.
-- **Annotation Search**: Search across all annotations/highlights from the library view.
+- **BibTeX Export**: Export selected papers or entire library to BibTeX format for LaTeX integration.
+- **Cloud Sync**: Synchronize research library across devices via GitHub Gist or custom backend.
+- **Zotero Integration**: Import/export papers directly with Zotero.
+- **PDF Metadata Write-back**: Write enriched metadata (XMP) back to the PDF file itself.

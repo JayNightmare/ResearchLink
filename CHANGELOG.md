@@ -2,6 +2,22 @@
 
 All notable changes to the "Research Link" extension will be documented in this file.
 
+## [0.0.5] - 2026-02-11
+
+### Added
+
+- **Import Tool**: Import papers from local PDF files — extracts title, DOI, authors, and abstract from page 1 text.
+- **Import Tool**: Import papers from URL/DOI — looks up metadata via Semantic Scholar and CrossRef APIs.
+- **Import Tool**: Editable metadata form for reviewing/correcting extracted data before saving.
+- **Import Tool**: "User Added" badge for imported papers, distinct from API-sourced papers.
+- **Import Tool**: If DOI is found in a PDF, automatically enriches metadata via API lookup.
+- **Icon**: Added new icon for the extension.
+- **Advanced Search**: Field-specific queries (Title, Author, Year, Venue, DOI) via toggle in search bar.
+- **Import Tool**: Selection UI for ambiguous URL/title imports — fetches multiple candidates from API sources.
+- **Search Filters**: Year range, Open Access toggle, Publication Type dropdown, and Sort options (Relevance, Most Cited, Newest, Oldest).
+- **OpenAlex Integration**: Added OpenAlex as a third primary data source for broader coverage and better metadata.
+- **CI**: Added GitHub Actions CI pipeline.
+
 ## [0.0.4] - 2026-02-11
 
 ### Added

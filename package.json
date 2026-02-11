@@ -2,7 +2,13 @@
 	"name": "research-link",
 	"displayName": "Research Link",
 	"description": "Cite research straight from your IDE",
-	"version": "0.0.4",
+	"publisher": "Jay Bell",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/JayNightmare/ResearchLink"
+	},
+	"icon": "media/favicon.png",
+	"version": "0.0.5",
 	"engines": {
 		"vscode": "^1.104.0"
 	},
@@ -16,6 +22,14 @@
 			{
 				"command": "research-link.helloWorld",
 				"title": "Hello World"
+			},
+			{
+				"command": "research-link.importPdf",
+				"title": "Research Link: Import PDF"
+			},
+			{
+				"command": "research-link.importUrl",
+				"title": "Research Link: Import from URL"
 			}
 		],
 		"viewsContainers": {

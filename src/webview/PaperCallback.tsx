@@ -77,6 +77,13 @@ const PaperCallback: React.FC = () => {
 									Access
 								</span>
 							)}
+							{paper.source ===
+								"user" && (
+								<span className="text-xs font-mono font-bold bg-amber-500/20 text-amber-400 px-2 py-1 rounded-full uppercase tracking-wider border border-amber-500/30">
+									User
+									Added
+								</span>
+							)}
 						</div>
 						<h1 className="text-3xl font-bold leading-tight tracking-tight">
 							{paper.title}

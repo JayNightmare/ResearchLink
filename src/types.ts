@@ -27,12 +27,21 @@ export interface Paper {
 	references?: string[]; // Semantic Scholar paper IDs for graph edges
 	enrichedAt?: number;
 	annotations?: PdfAnnotation[];
+	source?: "api" | "user" | "crossref" | "semanticscholar" | "openalex"; // Track how the paper was added
+}
+
+export interface SearchFields {
+	title?: string;
+	author?: string;
+	year?: { from?: number; to?: number };
+	venue?: string;
+	doi?: string;
 }
 
 export interface SearchResult {
 	papers: Paper[];
 	total: number;
-	source: "crossref" | "semanticscholar";
+	source: "crossref" | "semanticscholar" | "openalex";
 }
 
 export interface LibraryStore {

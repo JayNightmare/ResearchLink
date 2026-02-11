@@ -1,9 +1,10 @@
 import * as vscode from "vscode";
-import { Paper } from "../types";
+import { Paper, SearchFields } from "../types";
 import { CrossRefClient } from "../lib/api/crossref";
 import { SemanticScholarClient } from "../lib/api/semanticscholar";
 import { LibraryStore } from "../lib/storage/library";
 import { createExtractor, MetadataExtractor } from "../features/extraction";
+import { OpenAlexClient } from "../lib/api/openalex";
 
 export class ResearchLibraryProvider implements vscode.WebviewViewProvider {
 	public static readonly viewType = "research-link.researchLibrary";
@@ -12,6 +13,7 @@ export class ResearchLibraryProvider implements vscode.WebviewViewProvider {
 
 	private _crossRefClient = new CrossRefClient();
 	private _semanticScholarClient = new SemanticScholarClient();
+	private _openAlexClient = new OpenAlexClient();
 	private _libraryStore: LibraryStore;
 	private _extractor: MetadataExtractor = createExtractor();
 
@@ -71,6 +73,7 @@ export class ResearchLibraryProvider implements vscode.WebviewViewProvider {
 								const [
 									crossRefResults,
 									semanticScholarResults,
+									openAlexResults,
 								] =
 									await Promise.all(
 										[
@@ -80,85 +83,82 @@ export class ResearchLibraryProvider implements vscode.WebviewViewProvider {
 											this._semanticScholarClient.search(
 												query,
 											),
+											this._openAlexClient.search(
+												query,
+											),
 										],
 									);
 
-								const merged =
-									new Map<
-										string,
-										Paper
-									>();
-
-								// Add S2 results first (better citation data + open access)
-								for (const p of semanticScholarResults.papers) {
-									const key =
-										p.doi?.toLowerCase() ||
-										p.title
-											.toLowerCase()
-											.trim();
-									merged.set(
-										key,
-										p,
-									);
-								}
-
-								// Merge CrossRef — fill in missing fields
-								for (const p of crossRefResults.papers) {
-									const key =
-										p.doi?.toLowerCase() ||
-										p.title
-											.toLowerCase()
-											.trim();
-									const existing =
-										merged.get(
-											key,
-										);
-									if (
-										existing
-									) {
-										if (
-											!existing.abstract &&
-											p.abstract
-										) {
-											existing.abstract =
-												p.abstract;
-										}
-										if (
-											!existing.doi &&
-											p.doi
-										) {
-											existing.doi =
-												p.doi;
-										}
-										if (
-											!existing.pdfUrl &&
-											p.pdfUrl
-										) {
-											existing.pdfUrl =
-												p.pdfUrl;
-											existing.isOpenAccess = true;
-										}
-										if (
-											!existing.venue &&
-											p.venue
-										) {
-											existing.venue =
-												p.venue;
-										}
-									} else {
-										merged.set(
-											key,
-											p,
-										);
-									}
-								}
-
 								const combinedPapers =
-									Array.from(
-										merged.values(),
+									this._mergeResults(
+										semanticScholarResults.papers,
+										crossRefResults.papers,
+										openAlexResults.papers,
 									);
 
 								// Send results back to webview
+								webviewView.webview.postMessage(
+									{
+										type: "searchResults",
+										value: combinedPapers,
+									},
+								);
+							} catch (error) {
+								vscode.window.showErrorMessage(
+									`Search failed: ${error}`,
+								);
+							}
+						},
+					);
+					break;
+				}
+				case "advancedSearch": {
+					const fields =
+						data.value as SearchFields;
+					if (!fields) {
+						return;
+					}
+
+					const label = fields.doi
+						? `Looking up DOI: ${fields.doi}`
+						: `Advanced search...`;
+
+					await vscode.window.withProgress(
+						{
+							location: vscode
+								.ProgressLocation
+								.Notification,
+							title: label,
+							cancellable: false,
+						},
+						async () => {
+							try {
+								const [
+									crossRefResults,
+									semanticScholarResults,
+									openAlexResults,
+								] =
+									await Promise.all(
+										[
+											this._crossRefClient.searchAdvanced(
+												fields,
+											),
+											this._semanticScholarClient.searchAdvanced(
+												fields,
+											),
+											this._openAlexClient.searchAdvanced(
+												fields,
+											),
+										],
+									);
+
+								const combinedPapers =
+									this._mergeResults(
+										semanticScholarResults.papers,
+										crossRefResults.papers,
+										openAlexResults.papers,
+									);
+
 								webviewView.webview.postMessage(
 									{
 										type: "searchResults",
@@ -235,8 +235,96 @@ export class ResearchLibraryProvider implements vscode.WebviewViewProvider {
 					);
 					break;
 				}
+				case "importPdf": {
+					vscode.commands.executeCommand(
+						"research-link.importPdf",
+					);
+					break;
+				}
+				case "importUrl": {
+					vscode.commands.executeCommand(
+						"research-link.importUrl",
+					);
+					break;
+				}
 			}
 		});
+	}
+
+	private _mergeResults(
+		s2Papers: Paper[],
+		crossRefPapers: Paper[],
+		openAlexPapers: Paper[],
+	): Paper[] {
+		const merged = new Map<string, Paper>();
+
+		// 1. S2 results (often best for citation counts & links)
+		for (const p of s2Papers) {
+			const key =
+				p.doi?.toLowerCase() ||
+				p.title.toLowerCase().trim();
+			merged.set(key, p);
+		}
+
+		// 2. OpenAlex results (great coverage, OA links)
+		for (const p of openAlexPapers) {
+			const key =
+				p.doi?.toLowerCase() ||
+				p.title.toLowerCase().trim();
+			const existing = merged.get(key);
+			if (existing) {
+				// Enrich existing
+				if (!existing.abstract && p.abstract) {
+					existing.abstract = p.abstract;
+				}
+				if (!existing.doi && p.doi) {
+					existing.doi = p.doi;
+				}
+				if (!existing.pdfUrl && p.pdfUrl) {
+					existing.pdfUrl = p.pdfUrl;
+					existing.isOpenAccess = true;
+				}
+				if (!existing.venue && p.venue) {
+					existing.venue = p.venue;
+				}
+				if (
+					(existing.citations || 0) <
+					(p.citations || 0)
+				) {
+					existing.citations = p.citations;
+				}
+			} else {
+				merged.set(key, p);
+			}
+		}
+
+		// 3. CrossRef results (standard metadata)
+		for (const p of crossRefPapers) {
+			const key =
+				p.doi?.toLowerCase() ||
+				p.title.toLowerCase().trim();
+			const existing = merged.get(key);
+			if (existing) {
+				// Enrich existing
+				if (!existing.abstract && p.abstract) {
+					existing.abstract = p.abstract;
+				}
+				if (!existing.doi && p.doi) {
+					existing.doi = p.doi;
+				}
+				if (!existing.pdfUrl && p.pdfUrl) {
+					existing.pdfUrl = p.pdfUrl;
+					existing.isOpenAccess = true;
+				}
+				if (!existing.venue && p.venue) {
+					existing.venue = p.venue;
+				}
+			} else {
+				merged.set(key, p);
+			}
+		}
+
+		return Array.from(merged.values());
 	}
 
 	private _sendLibraryUpdate(webview: vscode.Webview) {

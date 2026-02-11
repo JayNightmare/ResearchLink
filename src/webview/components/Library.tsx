@@ -195,10 +195,38 @@ const Library: React.FC<LibraryProps> = ({ vscode }) => {
 					<h2 className="text-xl font-bold tracking-tight">
 						My Library
 					</h2>
-					<span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
-						{filteredPapers.length} /{" "}
-						{papers.length}
-					</span>
+					<div className="flex items-center gap-1.5">
+						<button
+							onClick={() =>
+								vscode.postMessage(
+									{
+										type: "importPdf",
+									},
+								)
+							}
+							className="cursor-pointer text-[10px] font-medium px-2 py-1 rounded-md border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+							title="Import a local PDF"
+						>
+							📄 PDF
+						</button>
+						<button
+							onClick={() =>
+								vscode.postMessage(
+									{
+										type: "importUrl",
+									},
+								)
+							}
+							className="cursor-pointer text-[10px] font-medium px-2 py-1 rounded-md border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+							title="Import from DOI or URL"
+						>
+							🔗 URL
+						</button>
+						<span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
+							{filteredPapers.length}{" "}
+							/ {papers.length}
+						</span>
+					</div>
 				</header>
 
 				<div className="space-y-2">

@@ -3,7 +3,9 @@ import * as fs from "fs";
 import * as path from "path";
 import { ResearchLibraryProvider } from "./webview/ResearchLibraryProvider";
 import { SemanticScholarClient } from "./lib/api/semanticscholar";
+import { CrossRefClient } from "./lib/api/crossref";
 import { LibraryStore } from "./lib/storage/library";
+import { extractPdfMetadata } from "./lib/pdfExtractor";
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -115,6 +117,10 @@ export function activate(context: vscode.ExtensionContext) {
 
 	// Register Open Graph Command
 	context.subscriptions.push(registerOpenGraphCommand(context));
+
+	// Register Import Commands
+	const importDisposables = registerImportCommands(context);
+	importDisposables.forEach((d) => context.subscriptions.push(d));
 }
 
 // This method is called when your extension is deactivated
@@ -412,6 +418,405 @@ function registerOpenGraphCommand(context: vscode.ExtensionContext) {
 			);
 		},
 	);
+}
+
+// ──────────────────────────────────────────
+//  Register: Import Commands
+// ──────────────────────────────────────────
+function registerImportCommands(
+	context: vscode.ExtensionContext,
+): vscode.Disposable[] {
+	const s2Client = new SemanticScholarClient();
+	const crossRefClient = new CrossRefClient();
+
+	function openImportPanel(args: {
+		paper?: any;
+		candidates?: any[];
+		importSource: "pdf" | "url";
+		fileName?: string;
+	}) {
+		const panel = vscode.window.createWebviewPanel(
+			"research-link.importEditor",
+			"Import Paper",
+			vscode.ViewColumn.One,
+			{
+				enableScripts: true,
+				localResourceRoots: [
+					vscode.Uri.joinPath(
+						context.extensionUri,
+						"out",
+					),
+					vscode.Uri.joinPath(
+						context.extensionUri,
+						"media",
+					),
+				],
+			},
+		);
+
+		const scriptUri = panel.webview.asWebviewUri(
+			vscode.Uri.joinPath(
+				context.extensionUri,
+				"out",
+				"webview",
+				"import.js",
+			),
+		);
+		const styleUri = panel.webview.asWebviewUri(
+			vscode.Uri.joinPath(
+				context.extensionUri,
+				"out",
+				"webview",
+				"import.css",
+			),
+		);
+
+		panel.webview.html = getWebviewContent(
+			scriptUri,
+			styleUri,
+			panel.webview.cspSource,
+		);
+
+		panel.webview.onDidReceiveMessage(
+			(message) => {
+				switch (message.type) {
+					case "ready":
+						if (
+							args.candidates &&
+							args.candidates.length >
+								0
+						) {
+							panel.webview.postMessage(
+								{
+									type: "loadCandidates",
+									papers: args.candidates,
+								},
+							);
+						} else {
+							panel.webview.postMessage(
+								{
+									type: "loadImportData",
+									paper: args.paper,
+									importSource:
+										args.importSource,
+									fileName: args.fileName,
+								},
+							);
+						}
+						return;
+					case "saveImportedPaper": {
+						const store = new LibraryStore(
+							context.globalStorageUri
+								.fsPath,
+						);
+						store.addPaper(message.paper);
+						vscode.window.showInformationMessage(
+							`Imported: ${message.paper.title}`,
+						);
+						panel.dispose();
+						return;
+					}
+					case "cancelImport":
+						panel.dispose();
+						return;
+				}
+			},
+			undefined,
+			context.subscriptions,
+		);
+	}
+
+	// Import PDF Command
+	const importPdf = vscode.commands.registerCommand(
+		"research-link.importPdf",
+		async () => {
+			const fileUris = await vscode.window.showOpenDialog({
+				canSelectMany: false,
+				filters: { "PDF Files": ["pdf"] },
+				title: "Select a PDF to import",
+			});
+
+			if (!fileUris || fileUris.length === 0) return;
+
+			const fileUri = fileUris[0];
+			const fileName = path.basename(fileUri.fsPath);
+
+			await vscode.window.withProgress(
+				{
+					location: vscode.ProgressLocation
+						.Notification,
+					title: `Extracting metadata from ${fileName}...`,
+					cancellable: false,
+				},
+				async () => {
+					try {
+						const pdfBuffer =
+							fs.readFileSync(
+								fileUri.fsPath,
+							);
+						const extracted =
+							await extractPdfMetadata(
+								pdfBuffer,
+								fileName,
+							);
+
+						// If DOI was found, try to enrich via APIs
+						if (extracted.doi) {
+							try {
+								const s2Results =
+									await s2Client.search(
+										extracted.doi,
+										1,
+									);
+								if (
+									s2Results
+										.papers
+										.length >
+									0
+								) {
+									const apiPaper =
+										s2Results
+											.papers[0];
+									// Fill in missing fields from API
+									if (
+										!extracted.abstract &&
+										apiPaper.abstract
+									)
+										extracted.abstract =
+											apiPaper.abstract;
+									if (
+										!extracted.year &&
+										apiPaper.year
+									)
+										extracted.year =
+											apiPaper.year;
+									if (
+										apiPaper.venue
+									)
+										extracted.venue =
+											apiPaper.venue;
+									if (
+										apiPaper.citations
+									)
+										extracted.citations =
+											apiPaper.citations;
+									if (
+										apiPaper.pdfUrl
+									)
+										extracted.pdfUrl =
+											apiPaper.pdfUrl;
+									if (
+										apiPaper.url
+									)
+										extracted.url =
+											apiPaper.url;
+								}
+							} catch {
+								// API enrichment is best-effort
+							}
+						}
+
+						openImportPanel({
+							paper: extracted,
+							importSource: "pdf",
+							fileName,
+						});
+					} catch (error) {
+						vscode.window.showErrorMessage(
+							`Failed to extract metadata: ${error}`,
+						);
+						// Still open the editor with defaults
+						openImportPanel({
+							paper: {
+								title: fileName,
+								source: "user",
+							},
+							importSource: "pdf",
+							fileName,
+						});
+					}
+				},
+			);
+		},
+	);
+
+	// Import URL Command
+	const importUrl = vscode.commands.registerCommand(
+		"research-link.importUrl",
+		async () => {
+			const input = await vscode.window.showInputBox({
+				prompt: "Enter a DOI, URL, or paper title to look up",
+				placeHolder:
+					"e.g. 10.1234/example or https://arxiv.org/abs/...",
+				title: "Import Paper from URL",
+			});
+
+			if (!input?.trim()) return;
+
+			const query = input.trim();
+
+			// Detect if it is likely a specific identifier (DOI or URL)
+			const isDoi =
+				/^10\.\d{4,9}\/[-._;()/:a-zA-Z0-9]+$/.test(
+					query,
+				);
+			const isUrl =
+				/^https?:\/\//.test(query) ||
+				query.includes("arxiv.org");
+			const isDirectLookup = isDoi || isUrl;
+
+			await vscode.window.withProgress(
+				{
+					location: vscode.ProgressLocation
+						.Notification,
+					title: `Looking up "${query}"...`,
+					cancellable: false,
+				},
+				async () => {
+					try {
+						// If direct lookup (DOI/URL), fetch 1. If keyword, fetch 5.
+						const limit = isDirectLookup
+							? 1
+							: 5;
+
+						const [s2Results, crResults] =
+							await Promise.all([
+								s2Client.search(
+									query,
+									limit,
+								),
+								crossRefClient.search(
+									query,
+									limit,
+								),
+							]);
+
+						// Merge results
+						const merged = new Map<
+							any,
+							any
+						>();
+
+						// S2 first
+						s2Results.papers.forEach(
+							(p) => {
+								const key =
+									p.doi?.toLowerCase() ||
+									p.title
+										.toLowerCase()
+										.trim();
+								merged.set(
+									key,
+									{
+										...p,
+										source: "user",
+									},
+								);
+							},
+						);
+
+						// CrossRef merge
+						crResults.papers.forEach(
+							(p) => {
+								const key =
+									p.doi?.toLowerCase() ||
+									p.title
+										.toLowerCase()
+										.trim();
+								const existing =
+									merged.get(
+										key,
+									);
+								if (existing) {
+									if (
+										!existing.abstract &&
+										p.abstract
+									)
+										existing.abstract =
+											p.abstract;
+									if (
+										!existing.doi &&
+										p.doi
+									)
+										existing.doi =
+											p.doi;
+									if (
+										!existing.pdfUrl &&
+										p.pdfUrl
+									)
+										existing.pdfUrl =
+											p.pdfUrl;
+									if (
+										!existing.venue &&
+										p.venue
+									)
+										existing.venue =
+											p.venue;
+								} else {
+									merged.set(
+										key,
+										{
+											...p,
+											source: "user",
+										},
+									);
+								}
+							},
+						);
+
+						const candidates = Array.from(
+							merged.values(),
+						);
+
+						if (candidates.length === 0) {
+							vscode.window.showWarningMessage(
+								"No results found. Opening blank import form.",
+							);
+							openImportPanel({
+								paper: {
+									title: query,
+									source: "user",
+								},
+								importSource:
+									"url",
+							});
+						} else if (
+							candidates.length ===
+								1 ||
+							isDirectLookup
+						) {
+							// Exact match or single result
+							openImportPanel({
+								paper: candidates[0],
+								importSource:
+									"url",
+							});
+						} else {
+							// Multiple candidates
+							openImportPanel({
+								candidates: candidates,
+								importSource:
+									"url",
+							});
+						}
+					} catch (error) {
+						vscode.window.showErrorMessage(
+							`Lookup failed: ${error}`,
+						);
+						openImportPanel({
+							paper: {
+								title: query,
+								source: "user",
+							},
+							importSource: "url",
+						});
+					}
+				},
+			);
+		},
+	);
+
+	return [importPdf, importUrl];
 }
 
 function getWebviewContent(

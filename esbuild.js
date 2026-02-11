@@ -12,6 +12,7 @@ async function main() {
 			"src/webview/panel.tsx",
 			"src/webview/pdf.tsx",
 			"src/webview/graph.tsx",
+			"src/webview/import.tsx",
 		],
 		bundle: true,
 		outdir: "out/webview",
