@@ -114,9 +114,21 @@ To maintain project velocity, the AI shifts between the following operational mo
      - Drag nodes, pan/zoom, click to open paper, hover tooltip.
      - `SemanticScholarClient.getReferences()` fetches citation links.
      - Fresh `LibraryStore` on each invocation (avoids stale cache). Shared-author edges sent instantly, citation edges async.
+     - **Second-degree references**: Fetches refs-of-refs (capped at 20 intermediates) to find indirect connections between saved papers. Second-degree edges rendered as dashed/lighter lines.
 - [x] **Search Deduplication**:
      - S2 + CrossRef results merged by DOI/title; missing abstracts, DOIs, and PDF URLs filled from either source.
      - S2 now requests `externalIds` field for DOI matching.
+- [x] **Enhanced Filtering**:
+     - Publication type filter dropdown (derived from saved papers).
+     - Author name filter input.
+     - "Most Cited" sort option alongside existing newest/oldest/year/title sorts.
+- [x] **PDF Annotation**:
+     - Text layer overlay on PDF canvas for text selection.
+     - Highlight creation with 5 color choices (yellow, green, blue, pink, orange).
+     - Annotation notes sidebar panel with per-page highlight list, inline note editing.
+     - Keyboard shortcut `⌘H` for quick highlighting.
+     - `PdfAnnotation` type in `types.ts`; `annotations` field on `Paper`.
+     - Annotations persisted to `LibraryStore` via `saveAnnotations` message handler.
 
 ### Usage Instructions
 
@@ -141,6 +153,6 @@ To maintain project velocity, the AI shifts between the following operational mo
 
 ## Next Steps
 
-- **Tagging & Filtering**: Add user-defined tags and filter/sort library.
-- **Citation Graph Depth**: Fetch second-degree references to enrich graph connectivity.
-- **PDF Annotation**: Highlight and annotate PDFs within the viewer.
+- **BibTeX Export**: One-click export of saved papers to `.bib` format.
+- **Collections/Folders**: Group papers into named collections for project-specific organization.
+- **Annotation Search**: Search across all annotations/highlights from the library view.

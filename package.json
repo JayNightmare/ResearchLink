@@ -2,7 +2,7 @@
 	"name": "research-link",
 	"displayName": "Research Link",
 	"description": "Cite research straight from your IDE",
-	"version": "0.0.3",
+	"version": "0.0.4",
 	"engines": {
 		"vscode": "^1.104.0"
 	},

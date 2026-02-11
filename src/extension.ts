@@ -98,6 +98,7 @@ export function activate(context: vscode.ExtensionContext) {
 									message.url,
 									message.title ||
 										"PDF",
+									message.paperId,
 								);
 								return;
 						}
@@ -125,7 +126,10 @@ export function deactivate() {}
 function registerOpenPdfCommand(context: vscode.ExtensionContext) {
 	return vscode.commands.registerCommand(
 		"research-link.openPdf",
-		async (url: string, title: string) => {
+		async (url: string, title: string, paperId?: string) => {
+			const libraryStore = new LibraryStore(
+				context.globalStorageUri.fsPath,
+			);
 			const panel = vscode.window.createWebviewPanel(
 				"researchLinkPdf",
 				`PDF: ${title.substring(0, 25)}...`,
@@ -267,10 +271,32 @@ function registerOpenPdfCommand(context: vscode.ExtensionContext) {
 								).toString(
 									"base64",
 								);
+
+							// Look up existing annotations for this paper
+							let existingAnnotations: any[] =
+								[];
+							if (paperId) {
+								const paper =
+									libraryStore.getPaper(
+										paperId,
+									);
+								if (
+									paper?.annotations
+								) {
+									existingAnnotations =
+										paper.annotations;
+								}
+							}
+
 							panel.webview.postMessage(
 								{
 									type: "loadPdfData",
 									data: base64,
+									paperId:
+										paperId ||
+										null,
+									annotations:
+										existingAnnotations,
 								},
 							);
 						} catch (err: any) {
@@ -284,6 +310,25 @@ function registerOpenPdfCommand(context: vscode.ExtensionContext) {
 										),
 								},
 							);
+						}
+					} else if (
+						message.type ===
+						"saveAnnotations"
+					) {
+						// Persist annotations to library store
+						if (message.paperId) {
+							const paper =
+								libraryStore.getPaper(
+									message.paperId,
+								);
+							if (paper) {
+								paper.annotations =
+									message.annotations ||
+									[];
+								libraryStore.addPaper(
+									paper,
+								);
+							}
 						}
 					}
 				},
@@ -463,7 +508,7 @@ async function loadGraphData(
 	const papers = libraryStore.getAllPapers();
 
 	// Build shared-author edges immediately (no API calls needed)
-	const edges: { source: string; target: string }[] = [];
+	const edges: { source: string; target: string; degree?: number }[] = [];
 	for (let i = 0; i < papers.length; i++) {
 		for (let j = i + 1; j < papers.length; j++) {
 			const shared = papers[i].authors.filter((a) =>
@@ -477,6 +522,7 @@ async function loadGraphData(
 				edges.push({
 					source: papers[i].id,
 					target: papers[j].id,
+					degree: 1,
 				});
 			}
 		}
@@ -489,11 +535,15 @@ async function loadGraphData(
 		edges,
 	});
 
-	// Then fetch citation-based edges asynchronously and send an update
+	// Then fetch citation-based edges asynchronously
 	if (papers.length > 0) {
 		const paperIds = new Set(papers.map((p) => p.id));
 		let foundNewEdges = false;
 
+		// Collect intermediate ref IDs for second-degree lookup
+		const intermediateRefs = new Map<string, string>(); // refId -> source paper id
+
+		// First-degree references
 		for (const paper of papers) {
 			try {
 				const refs = await s2Client.getReferences(
@@ -501,6 +551,7 @@ async function loadGraphData(
 				);
 				for (const refId of refs) {
 					if (paperIds.has(refId)) {
+						// Direct citation between two saved papers
 						const exists = edges.some(
 							(e) =>
 								(e.source ===
@@ -516,8 +567,21 @@ async function loadGraphData(
 							edges.push({
 								source: paper.id,
 								target: refId,
+								degree: 1,
 							});
 							foundNewEdges = true;
+						}
+					} else {
+						// Track as intermediate for second-degree lookup
+						if (
+							!intermediateRefs.has(
+								refId,
+							)
+						) {
+							intermediateRefs.set(
+								refId,
+								paper.id,
+							);
 						}
 					}
 				}
@@ -526,8 +590,65 @@ async function loadGraphData(
 			}
 		}
 
-		// If we found new citation edges, send an updated graph
+		// Send update after first-degree if we found edges
 		if (foundNewEdges) {
+			panel.webview.postMessage({
+				type: "graphData",
+				papers,
+				edges,
+			});
+		}
+
+		// Second-degree references: fetch refs of intermediate papers
+		// Limit to avoid excessive API calls (max 20 intermediates)
+		const intermediateIds = Array.from(
+			intermediateRefs.keys(),
+		).slice(0, 20);
+		let foundSecondDegree = false;
+
+		for (const intId of intermediateIds) {
+			try {
+				const refs2 =
+					await s2Client.getReferences(intId);
+				for (const refId2 of refs2) {
+					if (paperIds.has(refId2)) {
+						// Found a second-degree connection: savedPaper -> intermediate -> refId2
+						const sourcePaper =
+							intermediateRefs.get(
+								intId,
+							)!;
+						if (sourcePaper === refId2) {
+							continue; // Skip self-loops
+						}
+
+						const exists = edges.some(
+							(e) =>
+								(e.source ===
+									sourcePaper &&
+									e.target ===
+										refId2) ||
+								(e.source ===
+									refId2 &&
+									e.target ===
+										sourcePaper),
+						);
+						if (!exists) {
+							edges.push({
+								source: sourcePaper,
+								target: refId2,
+								degree: 2,
+							});
+							foundSecondDegree = true;
+						}
+					}
+				}
+			} catch {
+				// Silently continue
+			}
+		}
+
+		// Send final update with second-degree edges
+		if (foundSecondDegree) {
 			panel.webview.postMessage({
 				type: "graphData",
 				papers,

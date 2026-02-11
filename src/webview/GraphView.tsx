@@ -23,6 +23,7 @@ interface GraphNode {
 interface GraphEdge {
 	source: string;
 	target: string;
+	degree?: number;
 }
 
 interface TooltipState {
@@ -220,17 +221,24 @@ const GraphView: React.FC = () => {
 		ctx.scale(zoom, zoom);
 
 		// Draw edges
-		ctx.strokeStyle = "rgba(128, 128, 128, 0.3)";
-		ctx.lineWidth = 1.5;
 		for (const edge of edges) {
 			const source = nodes.find((n) => n.id === edge.source);
 			const target = nodes.find((n) => n.id === edge.target);
 			if (!source || !target) continue;
+
+			const isSecondDegree = edge.degree === 2;
+			ctx.strokeStyle = isSecondDegree
+				? "rgba(128, 128, 128, 0.15)"
+				: "rgba(128, 128, 128, 0.3)";
+			ctx.lineWidth = isSecondDegree ? 1 : 1.5;
+			ctx.setLineDash(isSecondDegree ? [4, 4] : []);
+
 			ctx.beginPath();
 			ctx.moveTo(source.x, source.y);
 			ctx.lineTo(target.x, target.y);
 			ctx.stroke();
 		}
+		ctx.setLineDash([]);
 
 		// Draw nodes
 		for (let i = 0; i < nodes.length; i++) {

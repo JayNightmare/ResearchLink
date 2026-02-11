@@ -48,6 +48,7 @@ const PaperCallback: React.FC = () => {
 				type: "openPdf",
 				url: paper.pdfUrl,
 				title: paper.title,
+				paperId: paper.id,
 			});
 		}
 	};

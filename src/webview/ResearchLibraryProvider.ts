@@ -206,6 +206,22 @@ export class ResearchLibraryProvider implements vscode.WebviewViewProvider {
 					);
 					break;
 				}
+				case "updateTags": {
+					const paper =
+						this._libraryStore.getPaper(
+							data.id,
+						);
+					if (paper) {
+						paper.tags = data.tags;
+						this._libraryStore.addPaper(
+							paper,
+						);
+						this._sendLibraryUpdate(
+							webviewView.webview,
+						);
+					}
+					break;
+				}
 				case "openPaper": {
 					vscode.commands.executeCommand(
 						"research-link.openPaper",

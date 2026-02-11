@@ -2,6 +2,34 @@
 
 All notable changes to the "Research Link" extension will be documented in this file.
 
+## [0.0.4] - 2026-02-11
+
+### Added
+
+- **Filtering**: Publication type filter dropdown (Journal, Conference, etc.). Author name filter input. "Most Cited" sort option.
+- **Graph Depth**: Second-degree citation references — papers connected through a shared intermediary are now linked. Limited to 20 intermediate lookups to avoid API abuse.
+- **Graph View**: Second-degree edges rendered as dashed lines with lower opacity for visual distinction.
+- **PDF Annotation**: Full annotation system — select text, highlight with 5 color options, add notes to highlights.
+- **PDF Annotation**: Annotations sidebar panel showing per-page highlights with note editing.
+- **PDF Annotation**: Keyboard shortcut `⌘H` for quick highlighting.
+- **PDF Annotation**: Annotations persisted to library storage, survive across sessions.
+- **PDF Annotation**: "This Page / All Pages" toggle in annotation panel — annotations no longer disappear when changing pages.
+- **PDF Annotation**: Click any annotation card to jump to its page.
+- **PDF Annotation**: Page badge on each annotation card showing which page it belongs to.
+
+### Fixed
+
+- **PDF Annotation**: Text layer was inverted (Y-axis) — highlighting the top of the PDF was tagging the bottom. Fixed by using viewport-transformed coordinates directly instead of double-inverting.
+- **PDF Annotation**: Text layer spans misaligned — switched from `left`/`top` positioning to `transform: translate()` for pixel-perfect alignment with the rendered canvas.
+- **PDF Annotation**: Highlight overlays drifted right at zoom levels above 180%. Fixed by using `inline-block` wrapper so canvas and overlays scroll together.
+- **PDF Viewer**: Toolbar (zoom controls, color picker, notes button) pushed off-screen at high zoom. Fixed by adding `min-w-0` to the content column to prevent flex overflow.
+
+### Changed
+
+- **Types**: Added `PdfAnnotation` interface and `annotations` array to `Paper` type.
+- **PDF Viewer**: Rewritten with text layer overlay, highlight canvas, and annotation panel.
+- **Extension Host**: PDF command now passes `paperId` for annotation lookup/persistence.
+
 ## [0.0.3] - 2026-02-10
 
 ### Fixed
